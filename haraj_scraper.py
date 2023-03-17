@@ -8,28 +8,47 @@ import os
 
 url = "https://haraj.com/"
 
-file_format = {"csv": ".csv",
+file_format = {
+                "csv": ".csv",
                "txt": ".txt",
                "text": ".txt",
                "json": ".json"
                 }
 
 def save_file(
-        name,
-        fname,
+        data,
+        path_or_buf,
         save_format:str = "txt",
-        save_method:str="w",
+        mode:str="w",
         encoding:str = "utf-8"
         ):
-    with open(f"{name}{file_format[save_format]}", save_method, encoding=encoding) as f:
-        f.writelines(", \n".join(fname))
+    from pandas import DataFrame
+    df = DataFrame.from_dict(data=data)
+
+    if save_format == "csv":
+        return df.to_csv(
+            path_or_buf=path_or_buf,
+            index=False,
+            encoding=encoding,
+            mode=mode
+            )
+    
+    elif save_format == "json":
+        return df.to_json(path_or_buf=path_or_buf)
+    
+    elif save_format == "excel":
+        return df.to_excel(
+            path_or_buf,
+            sheet_name="WebData",
+            index=False
+            )
 
 def get_haraj_links(
         url:str = url, 
         nu_of_pages = 10,
         save:bool = False,
         save_format:str = 'txt',
-        save_method:str= "w"
+        mode:str= "w"
         ):
     """Extract the links of products and/or services from Haraj website
 
@@ -82,7 +101,7 @@ def get_haraj_links(
     print(f"{len(haraj_links)} links were scrapped successfully.")
 
     if save==True:
-        save_file("haraj_links", haraj_links, save_format, save_method)
+        save_file("haraj_links", haraj_links, save_format=save_format, mode=mode)
         print(f"The haraj_links.{save_format} was saved to `{os.getcwd()}` directory.")
 
     return haraj_links
