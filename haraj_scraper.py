@@ -8,13 +8,6 @@ import os
 
 url = "https://haraj.com/"
 
-file_format = {
-                "csv": ".csv",
-               "txt": ".txt",
-               "text": ".txt",
-               "json": ".json"
-                }
-
 def save_file(
         data,
         path_or_buf,
@@ -47,6 +40,7 @@ def get_haraj_links(
         url:str = url, 
         nu_of_pages = 10,
         save:bool = False,
+        path_or_buf:str = "haraj_links",
         save_format:str = 'txt',
         mode:str= "w"
         ):
@@ -101,17 +95,21 @@ def get_haraj_links(
     print(f"{len(haraj_links)} links were scrapped successfully.")
 
     if save==True:
-        save_file("haraj_links", haraj_links, save_format=save_format, mode=mode)
-        print(f"The haraj_links.{save_format} was saved to `{os.getcwd()}` directory.")
-
-    return haraj_links
+        save_file(data=haraj_links,
+                  path_or_buf=f"{path_or_buf}.{save_format}", 
+                  save_format=save_format,
+                  mode=mode)
+        print(f"The haraj_links.{save_format} was saved successfully.")
+    else:
+         return haraj_links
 
 
 
 def get_haraj_details(url, 
-                      save:bool = False, 
-                      save_format:str = 'txt', 
-                      save_method:str = "w"
+                      save:bool = False,
+                      path_or_buf:str = "haraj_data", 
+                      save_format:str = "csv", 
+                      mode:str = "w"
                       ):
     """Extract the links from Absher website
     ========================================
@@ -123,7 +121,7 @@ def get_haraj_details(url,
     save_format: str -> A file format that is saved when the `save` is 
         True. The accepted format are ['.csv', '.txt', '.xlsx']
         Default : txt
-    save_method: str -> w
+    mode: str -> w
         w: write new or overwrite
         a: append
         for more details, refer to Python open function documentation"""
@@ -170,36 +168,43 @@ def get_haraj_details(url,
 
     else:
         for link in url:
-            r = requests.get(url=link, headers=headers)
-            soup = bs(r.content)
-            driver = webdriver.Edge(EdgeChromiumDriverManager().install())
-            driver.get(url=link)
+            try:
+                r = requests.get(url=link, headers=headers)
+                soup = bs(r.content)
+                driver = webdriver.Edge(EdgeChromiumDriverManager().install())
+                driver.get(url=link)
 
-            soup = bs(r.content)
-            body = soup.find(class_="postMain") # body data it the url
-            body1 = body.find(class_="post_header_wrapper") # post header wrapper class
+                soup = bs(r.content)
+                body = soup.find(class_="postMain") # body data it the url
+                body1 = body.find(class_="post_header_wrapper") # post header wrapper class
 
-            # Scrape the data
-            ad_title = body1.find("h1").contents[0]
-            seller_name = body1.find("a").find("span").contents[0]
-            city = body.find(class_="city").contents[0]
+                # Scrape the data
+                ad_title = body1.find("h1").contents[0]
+                seller_name = body1.find("a").find("span").contents[0]
+                city = body.find(class_="city").contents[0]
 
-            driver.find_element(By.CLASS_NAME, "contact").click()
-            time.sleep(0.5)
-            phone_number = driver.find_element(By.XPATH, '//*[@id="modal"]/div/div/a[2]')\
-            .get_attribute("href")
+                driver.find_element(By.CLASS_NAME, "contact").click()
+                time.sleep(0.5)
+                phone_number = driver.find_element(By.XPATH, '//*[@id="modal"]/div/div/a[2]')\
+                .get_attribute("href")
 
-            # append scraped data
-            haraj_data["ad_title"].append(ad_title)
-            haraj_data["seller"].append(seller_name)
-            haraj_data["city"].append(city)
-            haraj_data["phone_number"].append(phone_number)
+                # append scraped data
+                haraj_data["ad_title"].append(ad_title)
+                haraj_data["seller"].append(seller_name)
+                haraj_data["city"].append(city)
+                haraj_data["phone_number"].append(phone_number)
+            except Exception as e:
+                print(f"{link} was not scrapped because:", e, sep="\n")
+    
     print(f"{len(haraj_data)} elements were scrapped successfully.")
 
     if save==False:
         return haraj_data
     else:
-        save_file("haraj_data", list(haraj_data), save_format, save_method)
+        save_file(data=haraj_data,
+                  path_or_buf=f"{path_or_buf}.{save_format}", 
+                  save_format=save_format,
+                  mode=mode)
         print(haraj_data)
         print(f"The haraj_data.{save_format} was saved to `{os.getcwd()}` directory.")
 
