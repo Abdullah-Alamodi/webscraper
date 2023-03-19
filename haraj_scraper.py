@@ -11,7 +11,7 @@ url = "https://haraj.com/"
 def save_file(
         data,
         path_or_buf,
-        save_format:str = "txt",
+        save_format:str = "csv",
         mode:str="w",
         encoding:str = "utf-8"
         ):
@@ -41,7 +41,7 @@ def get_haraj_links(
         nu_of_pages = 10,
         save:bool = False,
         path_or_buf:str = "haraj_links",
-        save_format:str = 'txt',
+        save_format:str = 'csv',
         mode:str= "w"
         ):
     """Extract the links of products and/or services from Haraj website
