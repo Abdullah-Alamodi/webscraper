@@ -174,8 +174,8 @@ class Scraper:
         if isinstance(url, str):
             r = requests.get(url=url, headers=headers)
             soup = bs(r.content)
-            driver = webdriver.Edge(EdgeChromiumDriverManager().install())
-            driver.get(url=url)
+            options = Options()
+            driver = webdriver.Chrome(options=options)
 
             soup = bs(r.content)
             body = soup.find(class_="postMain") # body data it the url
@@ -202,7 +202,6 @@ class Scraper:
                 try:
                     r = requests.get(url=link, headers=headers)
                     soup = bs(r.content)
-                    driver = webdriver.Edge(EdgeChromiumDriverManager().install())
                     driver.get(url=link)
 
                     soup = bs(r.content)
