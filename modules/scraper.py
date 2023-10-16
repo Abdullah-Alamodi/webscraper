@@ -5,70 +5,15 @@ from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.options import Options
 import os
+from utils import save_file
 
-url = "https://haraj.com/"
-file_formate = ["csv", "json", "excel", "sql"]
-
-
-def save_file(
-            data,
-            path_or_buf,
-            save_format:str = "csv",
-            mode:str="w",
-            encoding:str = "utf-8",
-            database_url: str = None
-            ):
-        from pandas import DataFrame
-        from pandas.io import sql
-
-        def sql_connect(self, database_url=database_url):
-            if database_url==None:
-                database_url = f"mysql+mysqlconnector://root:password@localhost:3306/{data}"
-                
-                # create a connection to local sql database
-                con = sql.connect(database_url)
-                return df.to_sql(con=con)
-
-            else:
-                database_url = database_url
-                # create a conection to existinig sql database
-                con = sql.connect(database_url)
-                return df.to_sql(con=con)
-
-
-        df = DataFrame.from_dict(data=data)
-
-        if save_format == "csv":
-            return df.to_csv(
-                path_or_buf=path_or_buf,
-                index=False,
-                encoding=encoding,
-                mode=mode
-                )
-        
-        elif save_format == "json":
-            return df.to_json(path_or_buf=path_or_buf)
-        
-        elif save_format == "excel":
-            return df.to_excel(
-                path_or_buf,
-                sheet_name="WebData",
-                index=False
-                )
-        
-        elif save_format == "sql":
-            return sql_connect(database_url=database_url)
-        
-        else:
-            raise ValueError(f"Invalid Value format: {save_format}.\nYou have to select one of: {file_formate}")
-            
 class Scraper:
     def __init__(self, Options) -> None:
         self.Options = Options()
         self.save_file = save_file()
 
     def get_haraj_links(
-            url:str = url, 
+            url:str, 
             nu_of_pages = 10,
             save:bool = False,
             path_or_buf:str = "haraj_links",
@@ -120,9 +65,8 @@ class Scraper:
                 except Exception as e:
                     print(f"Warrnings: The loading took long time. Check the internert or check the error {e}")
 
-        haraj_links = driver.find_elements(By.ID, "postsList")
-        print(link.text for link in haraj_links)
-        haraj_links = [link.find_element(By.TAG_NAME, "a").get_attribute("href") for link in haraj_links]
+        haraj_links = driver.find_elements(By.CSS_SELECTOR, "a[data-testid='post-title-link']")
+        haraj_links = [link.get_attribute("href") for link in haraj_links]
         print(f"{len(haraj_links)} links were scrapped successfully.")
 
         if save==True:
@@ -167,15 +111,12 @@ class Scraper:
         haraj_data = {
             "ad_title": [],
             "seller": [],
-            "city": [],
-            "phone_number": []
+            "city": []
             }
         
         if isinstance(url, str):
             r = requests.get(url=url, headers=headers)
             soup = bs(r.content)
-            options = Options()
-            driver = webdriver.Chrome(options=options)
 
             soup = bs(r.content)
             body = soup.find(class_="postMain") # body data it the url
@@ -186,23 +127,16 @@ class Scraper:
             seller_name = body1.find("a").find("span").contents[0]
             city = body.find(class_="city").contents[0]
 
-            driver.find_element(By.CLASS_NAME, "contact").click()
-            time.sleep(0.5)
-            phone_number = driver.find_element(By.XPATH, '//*[@id="modal"]/div/div/a[2]')\
-            .get_attribute("href")
-
             # append scraped data
             haraj_data["ad_title"].append(ad_title)
             haraj_data["seller"].append(seller_name)
             haraj_data["city"].append(city)
-            haraj_data["phone_number"].append(phone_number)
 
         else:
             for link in url:
                 try:
                     r = requests.get(url=link, headers=headers)
                     soup = bs(r.content)
-                    driver.get(url=link)
 
                     soup = bs(r.content)
                     body = soup.find(class_="postMain") # body data it the url
@@ -213,16 +147,10 @@ class Scraper:
                     seller_name = body1.find("a").find("span").contents[0]
                     city = body.find(class_="city").contents[0]
 
-                    driver.find_element(By.CLASS_NAME, "contact").click()
-                    time.sleep(0.5)
-                    phone_number = driver.find_element(By.XPATH, '//*[@id="modal"]/div/div/a[2]')\
-                    .get_attribute("href")
-
                     # append scraped data
                     haraj_data["ad_title"].append(ad_title)
                     haraj_data["seller"].append(seller_name)
                     haraj_data["city"].append(city)
-                    haraj_data["phone_number"].append(phone_number)
                 except Exception as e:
                     print(f"{link} was not scrapped because:", e, sep="\n")
         
