@@ -24,10 +24,8 @@ class Scraper:
 
         Parameters
         ========================================
-        url: str -> add the url of Haraj.com. The default url is the Haraj 
-            homepage. You can add the url of any section if you need to scrape
-            a specific products or services tags.
-            Default : https://haraj.com/
+        url: str -> add the url of Haraj.com. You can add the url of any section
+            if you need to scrape a specific products or services tags.
         nu_of_pages: number of pages that you want to extract links
             data (Number of scrolling). You can either write how many
             scrolls you need to scrape or write None for all links in a
@@ -100,7 +98,7 @@ class Scraper:
             w: write new or overwrite
             a: append
             for more details, refer to Python open function documentation"""
-        
+                
         headers = requests.utils.default_headers()
         headers.update(
             {
@@ -111,59 +109,83 @@ class Scraper:
         haraj_data = {
             "ad_title": [],
             "seller": [],
-            "city": []
+            "city": [],
+            "description": [],
+            "url": []
             }
         
         if isinstance(url, str):
             r = requests.get(url=url, headers=headers)
-            soup = bs(r.content)
-
-            soup = bs(r.content)
-            body = soup.find(class_="postMain") # body data it the url
-            body1 = body.find(class_="post_header_wrapper") # post header wrapper class
+            soup = bs(r.content, features="html5lib")
+            body = soup.find(class_="col-span-full md:col-span-3") # body data it the url)
+            post_header = body.find(class_="flex w-full text-[#525762] dark:text-text-regular rounded-3xl") # post header wrapper class
 
             # Scrape the data
-            ad_title = body1.find("h1").contents[0]
-            seller_name = body1.find("a").find("span").contents[0]
-            city = body.find(class_="city").contents[0]
+            ad_title = post_header.find("h1").contents[0]
+            seller_name = post_header.find("a", {"data-testid": "post-author"}).get_text()
+            city = post_header.find(class_="city").contents[0]
+            desc = body.find("article").get_text().replace("\n", " ")
 
             # append scraped data
             haraj_data["ad_title"].append(ad_title)
             haraj_data["seller"].append(seller_name)
             haraj_data["city"].append(city)
+            haraj_data["description"].append(desc)
+            haraj_data["url"].append(url)
 
         else:
-            for link in url:
+            from tqdm import tqdm
+            for link in tqdm(url):
                 try:
                     r = requests.get(url=link, headers=headers)
-                    soup = bs(r.content)
-
-                    soup = bs(r.content)
-                    body = soup.find(class_="postMain") # body data it the url
-                    body1 = body.find(class_="post_header_wrapper") # post header wrapper class
+                    soup = bs(r.content, features="html5lib")
+                    body = soup.find(class_="col-span-full md:col-span-3") # body data it the url)
+                    post_header = body.find(class_="flex w-full text-[#525762] dark:text-text-regular rounded-3xl") # post header wrapper class
 
                     # Scrape the data
-                    ad_title = body1.find("h1").contents[0]
-                    seller_name = body1.find("a").find("span").contents[0]
-                    city = body.find(class_="city").contents[0]
+                    ad_title = post_header.find("h1").contents[0]
+                    seller_name = post_header.find("a", {"data-testid": "post-author"}).get_text()
+                    city = post_header.find(class_="city").contents[0]
+                    desc = body.find("article").get_text().replace("\n", " ")
+
 
                     # append scraped data
                     haraj_data["ad_title"].append(ad_title)
                     haraj_data["seller"].append(seller_name)
                     haraj_data["city"].append(city)
+                    haraj_data["description"].append(desc)
+                    haraj_data["url"].append(url)
+
                 except Exception as e:
                     print(f"{link} was not scrapped because:", e, sep="\n")
         
-        print(f"{len(haraj_data)} elements were scrapped successfully.")
+        print(f"{len(haraj_data['ad_title'])} elements were scrapped successfully.")
 
         if save==False:
             return haraj_data
         else:
             save_file(data=haraj_data,
-                    path_or_buf=f"{path_or_buf}.{save_format}", 
+                    path_or_buf=f"{path_or_buf}\\haraj_data.{save_format}", 
                     save_format=save_format,
                     mode=mode)
             print(haraj_data)
-            print(f"The haraj_data.{save_format} was saved to `{os.getcwd()}` directory.")
+            print(f"The haraj_data.{save_format} was saved to `{path_or_buf}` directory.")
 
+    def get_aqar_link():
+        pass
+
+    def get_aqar_details():
+        pass
+
+    def get_gatherin_link():
+        pass
+
+    def get_gatherin_details():
+        pass
+
+    def get_wasalt_link():
+        pass
+
+    def get_wasalt_details():
+        pass
 

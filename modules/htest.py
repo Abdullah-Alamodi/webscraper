@@ -1,12 +1,8 @@
-from scraper import Scraper
+from scraper import Scraper as scraper
 
-# links = Scraper.get_haraj_links(nu_of_pages=3)
-# print(links)
-# Scraper.get_haraj_details(links, save=True, save_format="csv")
+links = scraper.get_haraj_links(url="https://haraj.com", nu_of_pages=1)
 
-from utils import extract_website_name
+path = "C:\\Users\\Opal-\\Documents\\abdullah\\data\\"
+details = scraper.get_haraj_details(links[:10], save=True, path_or_buf=path)
 
-urls = ["aqar.com", "https://haraj.com", "www.maroof.com", "aqar"]
-
-for link in urls:
-    print(extract_website_name(link))
+print(details)
