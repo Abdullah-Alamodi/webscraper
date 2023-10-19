@@ -4,15 +4,19 @@ import requests
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.options import Options
-from selenium.common.exceptions import NoSuchElementException, TimeoutException
+from selenium.common.exceptions import NoSuchElementException, TimeoutException, WebDriverException
 import os
 from utils import checker, save_file
+from tqdm import tqdm
 
 class Scraper:
     def __init__(self) -> None:
         self.options = Options()
+        self.driver = webdriver.Chrome(options=self.options)
+        self.by = By
         self.requests = requests
         self.bs = BeautifulSoup
+        self.tqdm = tqdm
 
     def get_haraj_links(
             self,
@@ -50,7 +54,8 @@ class Scraper:
             list -> A list of links scraped from Haraj website.
             """
         
-        driver = webdriver.Chrome(options=self.options)
+        driver = self.driver
+        by = self.by
         driver.get(url=url)
 
         # `load more` XPATH from in Haraj home page.
@@ -58,7 +63,7 @@ class Scraper:
         
         # check load_more button.
         try:
-            driver.find_element(By.XPATH, load_more).click()
+            driver.find_element(by.XPATH, load_more).click()
         
         except NoSuchElementException:
             error_message = r"No load more button foud. The posible reason is the developer might changed the XPATH. Try to check first and update the `load_more variable`"
@@ -82,7 +87,7 @@ class Scraper:
                 except TimeoutException as e:
                     print(f"Warrnings: The loading took long time. Check the internert or check the error {e}")
 
-        haraj_links = driver.find_elements(By.CSS_SELECTOR, "a[data-testid='post-title-link']")
+        haraj_links = driver.find_elements(by.CSS_SELECTOR, "a[data-testid='post-title-link']")
         haraj_links = [link.get_attribute("href") for link in haraj_links]
         print(f"{len(haraj_links)} links were scrapped successfully.")
 
@@ -162,7 +167,7 @@ class Scraper:
         if isinstance(url, str):
             scrape_data(url)
         else:
-            from tqdm import tqdm
+            tqdm = self.tqdm
             for link in tqdm(url):
                 scrape_data(link)
 
@@ -180,7 +185,7 @@ class Scraper:
             print(haraj_data)
             print(f"The `haraj_data.{save_format}` was saved to `{path_or_buf}\\data` directory.")
 
-    def get_aqar_link(
+    def get_aqar_main(
             self,
             url:str, 
             nu_of_pages:int = 5,
@@ -189,13 +194,13 @@ class Scraper:
             save_format:str = 'csv',
             mode:str= "w"
             ) -> list:
-        """Extract the links of properties and/or services from Aqar website
+        """Extract the main details of properties and/or services from Aqar website
 
         Parameters
         ========================================
         url: str -> add the url of sa.aqar.fm. You can add the url of any section
-            or city if you need to scrape a specific propertie or service links.
-        nu_of_pages: number of pages that you want to extract links
+            or city if you need to scrape a specific propertie or service ################ADJUST IT.
+        nu_of_pages: number of pages that you want to extract ###############ADJUST IT
             data (Pagination). You can either write how many pages
             you need to scrape or write None for all infinite pagination
             in a section or cities in Aqar website.
@@ -218,30 +223,48 @@ class Scraper:
         # check if input is main url format or not. refer to the `checker` function in util
         # to make sure that url=`https:\\sa.aqar.fm\subdirectory` format for pagination purpose.
         url = checker(url=url, aqar_pagination=True)
+        #===========================REMOVE LATER=========================
         print("Done, the url is:", url)
 
-        requests = self.requests
-        bs = self.bs
-        headers = {
-    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3'
-                }
+        def get_main(url):
+            driver = self.driver
+            by = self.by
+
+            try:
+                driver.get(url=url)
+            except WebDriverException as e:
+                error_message = rf"Failed to scrape {url} website. I could be internet connection, CloudFlare security or {e}"
+                print(error_message)
+            
+            name = driver.find_elements(by.CSS_SELECTOR, 'div[class="listingCard_top__nVn1L"]')
+            price = driver.find_elements(by.CSS_SELECTOR, 'div[class="listingCard_price__N5eJ4"]')
+            sblb = driver.find_elements(by.CSS_SELECTOR, 'div[class="listingCard_spec__iKaqt"]') #sblb stands for space - bedroom - livingroom - bathroom
+            link = driver.find_elements(by.CSS_SELECTOR, 'div[class="listing_LinkedListingCard__5SRvZ"]')
+
+            #=======================FIX THIS PART======================
+            aqar_data = {
+            'name':[n.text for n in name], 
+            'link':[p.text for p in price],
+            'space-br-lr-br':[s.text for s in sblb],
+            'link':["https://sa.aqar.fm"+(l.get_attribute('href')) for l in link]
+            }
+
+            return aqar_data
 
         if nu_of_pages==0:
-            r = requests.get(url, headers=headers)
-            soup = bs(r.text, 'html.parser')
-            print(soup)
-
-            # links = soup.find("div")
-            # print("links:", links, type(links))
-            # for link in links:
-            #     print("link is: ", link)
-            # result = [link['href'] for link in links]
-            # print("result:", result)
-            # return result
+            get_main(url=url)
+        else:
+            for i in range(0, nu_of_pages):
+                tqdm = self.tqdm
+                get_main(url=url)
+        
+        #===========================REMOVE LATER=========================
+        print("This website uses CloudFare security. Will fix it ASAP")
         
 
     def get_aqar_details():
-        pass
+        #===========================REMOVE LATER=========================
+        print("This website uses CloudFare security. Will fix it ASAP")
 
     def get_gatherin_link(
             self,
